@@ -2,11 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"user-segmentation/internal/entities/operations"
 	"user-segmentation/internal/entities/segments"
 )
+
+var ErrInvalidDates = errors.New("invalid dates")
 
 type ChangeErrors map[string]string
 
@@ -88,6 +91,9 @@ func (s Service) GetUserSegments(ctx context.Context, userID int64) ([]segments.
 }
 
 func (s Service) GetHistory(ctx context.Context, year int, month int) ([][]string, error) {
+	if month < 1 || month > 12 {
+		return nil, ErrInvalidDates
+	}
 	ops, err := s.history.Get(ctx, year, month)
 	if err != nil {
 		return nil, err

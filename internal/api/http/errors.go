@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"user-segmentation/internal/entities/segments"
 	"user-segmentation/internal/repo"
+	"user-segmentation/internal/service"
 )
 
 var (
@@ -23,7 +24,7 @@ func hideError(err error) (int, error) {
 	if errors.Is(err, repo.ErrRelationNotFound) || errors.Is(err, repo.ErrSegmentNotFound) {
 		return http.StatusNotFound, err
 	}
-	if errors.Is(err, segments.ErrEmptySlug) || errors.Is(err, segments.ErrSlugToLong) || errors.Is(err, ErrChanging) {
+	if errors.Is(err, segments.ErrEmptySlug) || errors.Is(err, segments.ErrSlugToLong) || errors.Is(err, service.ErrInvalidDates) || errors.Is(err, ErrChanging) {
 		return http.StatusBadRequest, err
 	}
 	return http.StatusInternalServerError, ErrInternal

@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	httpserver "user-segmentation/internal/api/http"
+	"user-segmentation/internal/repo/history"
 	"user-segmentation/internal/repo/segments"
 	"user-segmentation/internal/service"
 )
@@ -27,6 +29,7 @@ var db *pgx.Conn
 func setupClient() *testClient {
 	a := service.New(
 		segments.New(db),
+		history.New(db),
 	)
 	srv := httpserver.New(slog.Default(), ":8888", gin.ReleaseMode, a)
 	testSrv := httptest.NewServer(srv.Handler)
@@ -42,20 +45,20 @@ type testClient struct {
 	baseURL string
 }
 
-func (tc *testClient) request(body map[string]any, method string, endpoint string, out any) error {
+func (tc *testClient) request(body map[string]any, method string, endpoint string) (*http.Response, error) {
 	data, err := json.Marshal(body)
 	if err != nil {
-		return fmt.Errorf("unable to marshal: %w", err)
+		return nil, fmt.Errorf("unable to marshal: %w", err)
 	}
 
 	req, err := http.NewRequest(method, tc.baseURL+"/api/"+endpoint, bytes.NewReader(data))
 	if err != nil {
-		return fmt.Errorf("unable to create request: %w", err)
+		return nil, fmt.Errorf("unable to create request: %w", err)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := tc.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("unexpected error: %w", err)
+		return nil, fmt.Errorf("unexpected error: %w", err)
 	}
 	var code error
 	if resp.StatusCode != http.StatusOK {
@@ -66,10 +69,14 @@ func (tc *testClient) request(body map[string]any, method string, endpoint strin
 		} else if resp.StatusCode == http.StatusConflict {
 			code = ErrConflict
 		} else {
-			return fmt.Errorf("unexpected status code: %s", resp.Status)
+			return resp, fmt.Errorf("unexpected status code: %s", resp.Status)
 		}
 	}
+	return resp, code
+}
 
+func (tc *testClient) proceed(body map[string]any, method string, endpoint string, out any) error {
+	resp, code := tc.request(body, method, endpoint)
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("unable to read response: %w", err)
@@ -93,7 +100,7 @@ func (tc *testClient) createSegment(slug string) (segmentProcessedResponse, erro
 		"slug": slug,
 	}
 	var response segmentProcessedResponse
-	err := tc.request(body, http.MethodPost, "segments", &response)
+	err := tc.proceed(body, http.MethodPost, "segments", &response)
 	return response, err
 }
 
@@ -102,7 +109,7 @@ func (tc *testClient) deleteSegment(slug string) (segmentProcessedResponse, erro
 		"slug": slug,
 	}
 	var response segmentProcessedResponse
-	err := tc.request(body, http.MethodDelete, "segments", &response)
+	err := tc.proceed(body, http.MethodDelete, "segments", &response)
 	return response, err
 }
 
@@ -118,7 +125,7 @@ func (tc *testClient) changeUserSegments(userID int64, add []string, remove []st
 		"remove": remove,
 	}
 	var response changeResultResponse
-	err := tc.request(body, http.MethodPost, fmt.Sprintf("users/%d", userID), &response)
+	err := tc.proceed(body, http.MethodPost, fmt.Sprintf("users/%d", userID), &response)
 	return response, err
 }
 
@@ -131,6 +138,19 @@ type segmentsResponse struct {
 func (tc *testClient) getUserSegments(userID int64) (segmentsResponse, error) {
 	body := map[string]any{}
 	var response segmentsResponse
-	err := tc.request(body, http.MethodGet, fmt.Sprintf("users/%d", userID), &response)
+	err := tc.proceed(body, http.MethodGet, fmt.Sprintf("users/%d", userID), &response)
 	return response, err
+}
+
+func (tc *testClient) getHistory(year, month int) ([][]string, error) {
+	resp, err := tc.request(map[string]any{}, http.MethodGet, fmt.Sprintf("history/%d/%d", year, month))
+	if err != nil {
+		return nil, err
+	}
+	reader := csv.NewReader(resp.Body)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+	return records, nil
 }

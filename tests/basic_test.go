@@ -12,6 +12,11 @@ import (
 	"user-segmentation/internal/repo"
 )
 
+const (
+	emptyUser = 123
+	mainUser  = 1
+)
+
 func randString(sz int) string {
 	res := make([]byte, sz)
 	if _, err := rand.Read(res); err != nil {
@@ -79,12 +84,12 @@ func TestUserSegments(t *testing.T) {
 		require.True(t, res.Data.Done)
 	}
 
-	resGet, err := client.getUserSegments(123)
+	resGet, err := client.getUserSegments(emptyUser)
 	require.NoError(t, err)
 	require.Empty(t, resGet.Error)
 	require.Empty(t, resGet.Data)
 
-	res, err := client.changeUserSegments(123, []string{}, []string{})
+	res, err := client.changeUserSegments(emptyUser, []string{}, []string{})
 	require.NoError(t, err)
 	require.True(t, res.Data.Done)
 	require.Empty(t, res.Data.Errors)
@@ -99,37 +104,36 @@ func TestUserSegments(t *testing.T) {
 		add = append(add, k)
 	}
 
-	res, err = client.changeUserSegments(1, add, []string{})
+	res, err = client.changeUserSegments(mainUser, add, []string{})
 	require.NoError(t, err)
 	require.True(t, res.Data.Done)
 	require.Empty(t, res.Data.Errors)
 
-	res, err = client.changeUserSegments(1, []string{}, []string{})
+	res, err = client.changeUserSegments(mainUser, []string{}, []string{})
 	require.NoError(t, err)
 	require.True(t, res.Data.Done)
 	require.Empty(t, res.Data.Errors)
 
-	res, err = client.changeUserSegments(1, []string{}, []string{"i am not exists!"})
-	require.NoError(t, err)
-	require.True(t, res.Data.Done)
-	require.Empty(t, res.Data.Errors)
+	res, err = client.changeUserSegments(mainUser, []string{}, []string{"i am not exist!"})
+	require.ErrorIs(t, err, ErrBadRequest)
+	require.False(t, res.Data.Done)
 
-	res, err = client.changeUserSegments(1, []string{add[0]}, []string{})
+	res, err = client.changeUserSegments(mainUser, []string{add[0]}, []string{})
 	require.ErrorIs(t, err, ErrBadRequest)
 	require.False(t, res.Data.Done)
 	require.Len(t, res.Data.Errors, 1)
 	require.Equal(t, res.Data.Errors[add[0]], repo.ErrRelationExists.Error())
 
-	resGet, err = client.getUserSegments(1)
+	resGet, err = client.getUserSegments(mainUser)
 	require.NoError(t, err)
 	require.Len(t, resGet.Data, len(add))
 
-	res, err = client.changeUserSegments(1, []string{}, add[1:])
+	res, err = client.changeUserSegments(mainUser, []string{}, add[1:])
 	require.NoError(t, err)
 	require.True(t, res.Data.Done)
 	require.Empty(t, res.Data.Errors)
 
-	resGet, err = client.getUserSegments(1)
+	resGet, err = client.getUserSegments(mainUser)
 	require.NoError(t, err)
 	require.Len(t, resGet.Data, 1)
 	require.Equal(t, resGet.Data[0].Slug, add[0])
