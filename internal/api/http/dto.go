@@ -35,7 +35,10 @@ type ChangeResultResponse struct {
 	Errors map[string]string `json:"errors"`
 }
 
-func changeResultToResponse(res service.ChangeErrors) ChangeResultResponse {
+func changeResultToResponse(res service.ChangeErrors, err error) ChangeResultResponse {
+	if err != nil {
+		return ChangeResultResponse{}
+	}
 	if len(res) == 0 {
 		res = nil
 	}

@@ -13,6 +13,7 @@ import (
 	"user-segmentation/internal/api/http"
 	"user-segmentation/internal/config"
 	"user-segmentation/internal/logger"
+	"user-segmentation/internal/repo/history"
 	"user-segmentation/internal/repo/segments"
 	"user-segmentation/internal/service"
 )
@@ -35,7 +36,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer func() { _ = conn.Close(ctx) }()
-	svc := service.New(segments.New(conn))
+	svc := service.New(segments.New(conn), history.New(conn))
 
 	srv := http.New(log, cfg.HTTPAddr, cfg.Env, svc)
 	sigQuit := make(chan os.Signal, 1)

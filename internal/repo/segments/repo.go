@@ -3,7 +3,6 @@ package segments
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"log/slog"
@@ -65,7 +64,9 @@ func (r Repo) ChangeUserSegments(ctx context.Context, userID int64, add []segmen
 		batch.Queue(addQuery, userID, seg.Slug)
 	}
 	br := r.db.SendBatch(ctx, batch)
-	defer br.Close()
+	defer func(br pgx.BatchResults) {
+		_ = br.Close()
+	}(br)
 	errs := make(service.ChangeErrors)
 	for _, seg := range remove {
 		_, err := br.Exec()
@@ -103,6 +104,7 @@ func (r Repo) GetUserSegments(ctx context.Context, userID int64) ([]segments.Seg
 	const fn = "repo.segments.GetUserSegments"
 	const query = "SELECT slug FROM segments WHERE id=ANY (SELECT segment_id FROM user_segments WHERE user_id=$1)"
 	rows, err := r.db.Query(ctx, query, userID)
+	defer rows.Close()
 	if errors.Is(err, pgx.ErrNoRows) {
 		return []segments.Segment{}, repo.ErrNoSegments
 	}
@@ -116,7 +118,6 @@ func (r Repo) GetUserSegments(ctx context.Context, userID int64) ([]segments.Seg
 		}
 		res = append(res, segments.Segment{Slug: slug})
 	}
-	fmt.Println("res", res)
 	return res, nil
 }
 
