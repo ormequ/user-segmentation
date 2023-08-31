@@ -3,8 +3,8 @@ package tests
 import (
 	"crypto/rand"
 	"github.com/brianvoe/gofakeit/v6"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/v3/assert"
 	"math/big"
 	"testing"
 	httpserver "user-segmentation/internal/api/http"

@@ -7,3 +7,34 @@
 ## Запуск
 `docker-compose up`
 
+## Примеры работы
+Сервис построен на REST API. Файл Segmentation.postman_collection.json содержит экспорт коллекции Postman
+с примерами работы программы
+
+## Детали
+
+### REST API
+
+- POST /api/segments - создание сегмента. В body нужно передать slug
+- DELETE /api/segments - удаление сегмента. В body нужно передать slug
+- GET /api/history/:year/:month - просмотр истории за год year и месяц month. 
+  На выходе - csv в следующем формате: `User ID,Segment,Operation,Timestamp UTC`
+- POST /api/users/:user_id - добавление/удаление сегментов у пользователя. 
+  В body нужно передать remove и add - массивы названий (slug) сегментов для
+  удаления и добавления соответственно
+- GET /api/users/:user_id - получение сегментов пользователя с user_id
+
+### Тестирование
+
+Для запуска тестов воспользуйтесь командой
+`go test -v ./...`
+**Обязательно** наличие Docker, так как используется dockertest
+Реализованы функциональные и unit-тесты
+
+### Использованные технологии
+
+- Go
+- PostgreSQL
+- Docker
+- Gin
+- Pgx
