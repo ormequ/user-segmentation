@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_HOST: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "root"
+      POSTGRES_DB: "segmentation"
+    ports:
+      - "5433:5432"
+    networks:
+      - default
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  migrate:
+    image: migrate/migrate
+    links:
+      - postgres
+    depends_on:
+      - postgres
+    networks:
+      - default
+    volumes:
+      - ./migrations:/migrations
+    command: ["-path", "./migrations", "-database", "postgres://postgres:root@postgres:5432/segmentation?sslmode=disable", "up"]
+  app:
+    build: .
+    env_file: config.env
+    depends_on:
+      - postgres
+      - migrate
+    links:
+      - postgres
+    networks:
+      - default
+    ports:
+      - "8888:8888"
+
+networks:
+  default:
+
+volumes:
+  pgdata:
