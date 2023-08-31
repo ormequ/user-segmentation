@@ -13,6 +13,8 @@ import (
 	"user-segmentation/internal/service/mocks"
 )
 
+var now = time.Now().UTC()
+
 const longSlug = "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
 
 func storeRepo(t *testing.T) service.SegmentsRepo {
@@ -36,7 +38,7 @@ func getHistoryRepo(t *testing.T, rows int64, opType operations.Type) service.Hi
 	for i := range res {
 		res[i].UserID = int64(i)
 		res[i].Segment = segments.Segment{Slug: fmt.Sprintf("slug-%d", i)}
-		res[i].Time = time.Now().UTC()
+		res[i].Time = now
 		res[i].Type = opType
 	}
 	r := mocks.NewHistoryRepo(t)
@@ -214,8 +216,8 @@ func TestService_GetHistory(t *testing.T) {
 			},
 			want: [][]string{
 				{"User ID", "Segment", "Operation", "Timestamp UTC"},
-				{"0", "slug-0", "add", time.Now().UTC().String()},
-				{"1", "slug-1", "add", time.Now().UTC().String()},
+				{"0", "slug-0", "add", now.String()},
+				{"1", "slug-1", "add", now.String()},
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
 				return assert.NoError(t, err)
@@ -234,8 +236,8 @@ func TestService_GetHistory(t *testing.T) {
 			},
 			want: [][]string{
 				{"User ID", "Segment", "Operation", "Timestamp UTC"},
-				{"0", "slug-0", "remove", time.Now().UTC().String()},
-				{"1", "slug-1", "remove", time.Now().UTC().String()},
+				{"0", "slug-0", "remove", now.String()},
+				{"1", "slug-1", "remove", now.String()},
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
 				return assert.NoError(t, err)

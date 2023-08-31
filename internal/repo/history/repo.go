@@ -24,7 +24,7 @@ func (r Repo) Get(ctx context.Context, year int, month int) ([]operations.Operat
                    WHERE time BETWEEN $1 AND $2`
 	m := time.Month(month)
 	minTime := time.Date(year, m, 1, 0, 0, 0, 0, time.UTC)
-	maxTime := time.Date(year, m+1, 0, 0, 0, 0, 0, time.UTC)
+	maxTime := time.Date(year, m+1, 0, 23, 59, 59, 1e9-1, time.UTC)
 	rows, err := r.db.Query(ctx, query, minTime, maxTime)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return []operations.Operation{}, nil
