@@ -104,10 +104,10 @@ func (r Repo) GetUserSegments(ctx context.Context, userID int64) ([]segments.Seg
 	const fn = "repo.segments.GetUserSegments"
 	const query = "SELECT slug FROM segments WHERE id=ANY (SELECT segment_id FROM user_segments WHERE user_id=$1)"
 	rows, err := r.db.Query(ctx, query, userID)
-	defer rows.Close()
 	if errors.Is(err, pgx.ErrNoRows) {
 		return []segments.Segment{}, repo.ErrNoSegments
 	}
+	defer rows.Close()
 	var res []segments.Segment
 	for rows.Next() {
 		var slug string
