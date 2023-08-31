@@ -8,7 +8,7 @@
 `docker-compose up`
 
 ## Примеры работы
-Сервис построен на REST API. Файл Segmentation.postman_collection.json содержит экспорт коллекции Postman
+Сервис построен на REST API. Файл `Segmentation.postman_collection.json` содержит экспорт коллекции Postman
 с примерами работы программы
 
 ## Детали
